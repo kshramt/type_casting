@@ -1,0 +1,11 @@
+= `type_casting`
+
+image:https://travis-ci.com/kshramt/type_casting.svg?branch=master["Build Status", link="https://travis-ci.com/kshramt/type_casting"]
+
+== Release
+
+----
+rm -fr type_casting.egg-info
+python3 setup.py sdist
+twine upload dist/type_casting-x.y.z.tar.gz
+----
