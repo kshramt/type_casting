@@ -13,7 +13,9 @@ _PY37 = sys.version_info.major == 3 and sys.version_info.minor == 7
 if _PY37:
 
     def cast(cls, x, implicit_conversions=None):
-        if dataclasses.is_dataclass(cls):
+        if implicit_conversions and (cls in implicit_conversions):
+            return implicit_conversions[cls](x)
+        elif dataclasses.is_dataclass(cls):
             if not isinstance(x, dict):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
             fields = {f.name: f.type for f in dataclasses.fields(cls)}
@@ -25,10 +27,12 @@ if _PY37:
                     for k, v in x.items()
                 }
             )
-        elif implicit_conversions and (cls in implicit_conversions):
-            return implicit_conversions[cls](x)
         elif cls == typing.Any:
             return x
+        elif cls == decimal.Decimal:
+            if not isinstance(x, (str, int, float)):
+                raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+            return decimal.Decimal(x)
         elif cls == complex:
             if not isinstance(x, (int, float, complex)):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
@@ -83,7 +87,9 @@ if _PY37:
 else:
 
     def cast(cls, x, implicit_conversions=None):
-        if dataclasses.is_dataclass(cls):
+        if implicit_conversions and (cls in implicit_conversions):
+            return implicit_conversions[cls](x)
+        elif dataclasses.is_dataclass(cls):
             if not isinstance(x, dict):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
             fields = {f.name: f.type for f in dataclasses.fields(cls)}
@@ -95,10 +101,12 @@ else:
                     for k, v in x.items()
                 }
             )
-        elif implicit_conversions and (cls in implicit_conversions):
-            return implicit_conversions[cls](x)
         elif cls == typing.Any:
             return x
+        elif cls == decimal.Decimal:
+            if not isinstance(x, (str, int, float)):
+                raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+            return decimal.Decimal(x)
         elif cls == complex:
             if not isinstance(x, (int, float, complex)):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
@@ -190,9 +198,14 @@ class _Tester(unittest.TestCase):
 
         def test_cast_with_implicit_conversions(self):
             @dataclasses.dataclass
+            class My:
+                x: typing.Any
+
+            @dataclasses.dataclass
             class c2:
                 x: decimal.Decimal
                 y: typing.Deque[decimal.Decimal]
+                z: My
 
             @dataclasses.dataclass
             class c1:
@@ -203,12 +216,13 @@ class _Tester(unittest.TestCase):
                     c2(
                         decimal.Decimal("3.2113"),
                         collections.deque([decimal.Decimal("1.992")]),
+                        My(9),
                     )
                 ),
                 cast(
                     c1,
-                    dict(x=dict(x="3.2113", y=["1.992"])),
-                    implicit_conversions={decimal.Decimal: decimal.Decimal},
+                    dict(x=dict(x="3.2113", y=["1.992"], z=9)),
+                    implicit_conversions={My: My},
                 ),
             )
 
@@ -275,9 +289,14 @@ class _Tester(unittest.TestCase):
 
         def test_cast_with_implicit_conversions(self):
             @dataclasses.dataclass
+            class My:
+                x: typing.Any
+
+            @dataclasses.dataclass
             class c2:
                 x: decimal.Decimal
                 y: typing.Deque[decimal.Decimal]
+                z: My
 
             @dataclasses.dataclass
             class c1:
@@ -288,12 +307,13 @@ class _Tester(unittest.TestCase):
                     c2(
                         decimal.Decimal("3.2113"),
                         collections.deque([decimal.Decimal("1.992")]),
+                        My(9),
                     )
                 ),
                 cast(
                     c1,
-                    dict(x=dict(x="3.2113", y=["1.992"])),
-                    implicit_conversions={decimal.Decimal: decimal.Decimal},
+                    dict(x=dict(x="3.2113", y=["1.992"], z=9)),
+                    implicit_conversions={My: My},
                 ),
             )
 
