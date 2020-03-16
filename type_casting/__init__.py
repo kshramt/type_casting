@@ -101,6 +101,25 @@ else:
                     for k, v in x.items()
                 }
             )
+        elif (
+            isinstance(cls, type)
+            and issubclass(cls, dict)
+            and hasattr(cls, "__annotations__")
+            and hasattr(cls, "__total__")
+        ):
+            if not isinstance(x, dict):
+                raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+            fields = cls.__annotations__
+            if cls.__total__:
+                if set(fields.keys()) != set(x.keys()):
+                    raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+            else:
+                if not set(x.keys()).issubset(set(fields.keys())):
+                    raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+            return {
+                k: cast(fields[k], v, implicit_conversions=implicit_conversions)
+                for k, v in x.items()
+            }
         elif cls == typing.Any:
             return x
         elif cls == decimal.Decimal:
@@ -340,6 +359,25 @@ class _Tester(unittest.TestCase):
                 cast(c1, dict(x=1.0, y=2, z=3))
             with self.assertRaises(TypeError):
                 cast(c1, dict(x=1j, y=2, z=3))
+
+        def test_cast_TypedDict(self):
+            class td1(typing.TypedDict):
+                x: int
+                y: str
+
+            class td2(typing.TypedDict, total=False):
+                p: td1
+                q: str
+
+            self.assertEqual(
+                dict(p=dict(x=1, y="a"), q="b"),
+                cast(td2, dict(p=dict(x=1, y="a"), q="b")),
+            )
+            self.assertEqual(
+                dict(p=dict(x=1, y="a")), cast(td2, dict(p=dict(x=1, y="a")))
+            )
+            with self.assertRaises(TypeError):
+                cast(td2, dict(p=dict(x=1)))
 
 
 if __name__ == "__main__":
