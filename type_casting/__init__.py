@@ -81,7 +81,7 @@ if _PY37:
                     pass
             raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
         else:
-            raise ValueError(f"Unsupported value {x}: {type(x)}")
+            raise ValueError(f"Unsupported class {cls}: {type(cls)}")
 
 
 else:
@@ -174,7 +174,7 @@ else:
                     pass
             raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
         else:
-            raise ValueError(f"Unsupported value {x}: {type(x)}")
+            raise ValueError(f"Unsupported class {cls}: {type(cls)}")
 
 
 class _Tester(unittest.TestCase):
