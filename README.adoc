@@ -2,6 +2,45 @@
 
 image:https://travis-ci.com/kshramt/type_casting.svg?branch=master["Build Status", link="https://travis-ci.com/kshramt/type_casting"]
 
+----
+# Python 3.8
+import dataclasses
+import typing
+
+import type_casting
+
+
+@dataclasses.dataclass
+class AdamConf:
+    name: typing.Literal["AdamConf"]
+    learning_rate: float
+    beta_1: float
+    beta_2: float
+    epsilon: float
+
+
+@dataclasses.dataclass
+class SGDConf:
+    name: typing.Literal["SGDConf"]
+    learning_rate: float
+    momentum: float
+
+
+@dataclasses.dataclass
+class Conf:
+    n_units: int
+    optimizer: typing.Union[AdamConf, SGDConf]
+
+
+conf = type_casting.cast(
+    Conf,
+    dict(n_units=100, optimizer=dict(name="SGDConf", learning_rate=1e-2, momentum=0)),
+)
+assert conf == Conf(
+    n_units=100, optimizer=SGDConf(name="SGDConf", learning_rate=1e-2, momentum=0)
+)
+----
+
 == Release
 
 ----
