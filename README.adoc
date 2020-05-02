@@ -1,4 +1,5 @@
 = `type_casting`
+:toc: right
 
 image:https://travis-ci.com/kshramt/type_casting.svg?branch=master["Build Status", link="https://travis-ci.com/kshramt/type_casting"]
 
