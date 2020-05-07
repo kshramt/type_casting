@@ -19,7 +19,7 @@ setup(
     description="Type Casting",
     url="https://github.com/kshramt/type_casting",
     author="kshramt",
-    packages=["type_casting"],
+    packages=["type_casting", "type_casting.py37", "type_casting.latest"],
     install_requires=[],
     classifiers=["License :: OSI Approved :: GNU General Public License v3 (GPLv3)"],
     data_files=[(".", ["LICENSE.txt"])],

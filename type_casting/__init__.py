@@ -1,7 +1,7 @@
 import sys
 
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 
 if sys.version_info.major == 3 and sys.version_info.minor == 7:
