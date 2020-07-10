@@ -38,10 +38,10 @@ def cast(cls, x, implicit_conversions=None):
             raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
         fields = cls.__annotations__
         if cls.__total__:
-            if set(fields.keys()) != set(x.keys()):
+            if set(fields) != set(x):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
         else:
-            if not set(x.keys()).issubset(set(fields.keys())):
+            if not set(x).issubset(set(fields)):
                 raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
         return {
             k: cast(fields[k], v, implicit_conversions=implicit_conversions)
