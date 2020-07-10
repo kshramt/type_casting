@@ -61,7 +61,7 @@ def cast(cls, x, implicit_conversions=None):
         if not isinstance(x, (int, float)):
             raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
         return x
-    elif type(cls) == type:
+    elif isinstance(cls, type):
         if not isinstance(x, cls):
             raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
         return x
