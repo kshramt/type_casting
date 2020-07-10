@@ -8,6 +8,24 @@ from type_casting import cast
 
 
 class Tester(unittest.TestCase):
+    def test_default(self):
+        @dataclasses.dataclass
+        class c:
+            x: int
+            y: float = 1
+            z: str = dataclasses.field(default_factory=lambda: "ok")
+
+        self.assertEqual(c(x=0, y=2, z="a"), cast(c, dict(x=0, y=2, z="a")))
+        self.assertEqual(c(x=0, y=2), cast(c, dict(x=0, y=2, z="ok")))
+        self.assertEqual(c(x=0, z="a"), cast(c, dict(x=0, y=1, z="a")))
+        self.assertEqual(c(x=0), cast(c, dict(x=0, y=1, z="ok")))
+        with self.assertRaises(TypeError):
+            cast(c, dict(y=2, z="a"))
+        with self.assertRaises(TypeError):
+            cast(c, dict(x=0, y=2, z="a", w=99))
+        with self.assertRaises(TypeError):
+            cast(c, dict(x=0, w=99))
+
     def test_cast(self):
         @dataclasses.dataclass
         class c4:

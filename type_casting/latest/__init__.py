@@ -10,8 +10,17 @@ def cast(cls, x, implicit_conversions=None):
     elif dataclasses.is_dataclass(cls):
         if not isinstance(x, dict):
             raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
+        required_key_set = set(
+            f.name
+            for f in dataclasses.fields(cls)
+            if (f.default == dataclasses.MISSING)
+            and (f.default_factory == dataclasses.MISSING)
+        )
+        x_key_set = set(x)
         fields = {f.name: f.type for f in dataclasses.fields(cls)}
-        if set(fields.keys()) != set(x.keys()):
+        if not (
+            required_key_set.issubset(x_key_set) and x_key_set.issubset(set(fields))
+        ):
             raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
         return cls(
             **{
