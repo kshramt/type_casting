@@ -69,10 +69,22 @@ def cast(cls, x, implicit_conversions=None):
         if x not in cls.__args__:
             raise TypeError(f"{x} is not compatible with {cls}")
         return x
-    elif cls.__origin__ == list or cls.__origin__ == collections.abc.Sequence:
+    elif cls.__origin__ == set or cls.__origin__ in (
+        collections.abc.Set,
+        collections.abc.MutableSet,
+    ):
+        vcls = cls.__args__[0]
+        return set(cast(vcls, v, implicit_conversions=implicit_conversions) for v in x)
+    elif cls.__origin__ == list or cls.__origin__ in (
+        collections.abc.Sequence,
+        collections.abc.MutableSequence,
+    ):
         vcls = cls.__args__[0]
         return [cast(vcls, v, implicit_conversions=implicit_conversions) for v in x]
-    elif cls.__origin__ == dict or cls.__origin__ == collections.abc.Mapping:
+    elif cls.__origin__ == dict or cls.__origin__ in (
+        collections.abc.Mapping,
+        collections.abc.MutableMapping,
+    ):
         kcls, vcls = cls.__args__
         return {
             cast(kcls, k, implicit_conversions=implicit_conversions): cast(
