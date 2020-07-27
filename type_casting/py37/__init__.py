@@ -16,9 +16,9 @@ def cast(cls, x, implicit_conversions=None):
         return implicit_conversions[cls](x)
     elif isinstance(cls, GetAttr):
         if "module" not in x:
-            raise TypeError(f'"module" key not in `x` for {cls}: {x}')
+            raise TypeError(f'The "module" key not found in `x` for {cls}: {x}')
         if "name" not in x:
-            raise TypeError(f'"name" key not in `x` for {cls}: {x}')
+            raise TypeError(f'The "name" key not found in `x` for {cls}: {x}')
         return getattr(sys.modules[x["module"]], x["name"])(
             *cast(cls.args, x.get("args", [])), **cast(cls.kwargs, x.get("kwargs", {}))
         )
