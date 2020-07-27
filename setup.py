@@ -21,6 +21,7 @@ setup(
     author="kshramt",
     packages=["type_casting", "type_casting.py37", "type_casting.latest"],
     install_requires=[],
+    extras_require=dict(dev=["pylint", "twine", "black"]),
     classifiers=["License :: OSI Approved :: GNU General Public License v3 (GPLv3)"],
     data_files=[(".", ["LICENSE.txt"])],
     zip_safe=True,
