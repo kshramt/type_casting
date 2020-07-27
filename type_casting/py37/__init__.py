@@ -1,12 +1,27 @@
 import collections
 import dataclasses
 import decimal
-import typing
+import sys
+from typing import Any, Union
+
+
+class GetAttr:
+    def __init__(self, args, kwargs):
+        self.args = args
+        self.kwargs = kwargs
 
 
 def cast(cls, x, implicit_conversions=None):
     if implicit_conversions and (cls in implicit_conversions):
         return implicit_conversions[cls](x)
+    elif isinstance(cls, GetAttr):
+        if "module" not in x:
+            raise TypeError(f'"module" key not in `x` for {cls}: {x}')
+        if "name" not in x:
+            raise TypeError(f'"name" key not in `x` for {cls}: {x}')
+        return getattr(sys.modules[x["module"]], x["name"])(
+            *cast(cls.args, x.get("args", [])), **cast(cls.kwargs, x.get("kwargs", {}))
+        )
     elif dataclasses.is_dataclass(cls):
         if not isinstance(x, dict):
             raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
@@ -28,7 +43,7 @@ def cast(cls, x, implicit_conversions=None):
                 for k, v in x.items()
             }
         )
-    elif cls == typing.Any:
+    elif cls == Any:
         return x
     elif cls == decimal.Decimal:
         if not isinstance(x, (str, int, float)):
@@ -85,7 +100,7 @@ def cast(cls, x, implicit_conversions=None):
             cast(vcls, v, implicit_conversions=implicit_conversions)
             for vcls, v in zip(vclss, x)
         )
-    elif cls.__origin__ == typing.Union:
+    elif cls.__origin__ == Union:
         for ucls in cls.__args__:
             try:
                 return cast(ucls, x, implicit_conversions=implicit_conversions)

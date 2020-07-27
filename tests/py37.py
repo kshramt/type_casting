@@ -4,10 +4,49 @@ import decimal
 import typing
 import unittest
 
-from type_casting import cast
+import type_casting
+
+
+class Recording:
+    def __init__(self, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
+
+    def __eq__(self, other):
+        return self.args == other.args and self.kwargs == other.kwargs
 
 
 class Tester(unittest.TestCase):
+    def test_getattr(self):
+        self.assertEqual(
+            Recording("a", 1, a="p", b=[1, 2]),
+            type_casting.cast(
+                type_casting.GetAttr(
+                    typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]
+                ),
+                dict(
+                    module=__name__,
+                    name="Recording",
+                    args=["a", 1],
+                    kwargs=dict(a="p", b=[1, 2]),
+                ),
+            ),
+        )
+        with self.assertRaises(TypeError):
+            type_casting.cast(
+                type_casting.GetAttr(
+                    typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]
+                ),
+                dict(name="Recording", args=["a", 1], kwargs=dict(a="p", b=[1, 2]),),
+            ),
+        with self.assertRaises(TypeError):
+            type_casting.cast(
+                type_casting.GetAttr(
+                    typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]
+                ),
+                dict(module=__name__, args=["a", 1], kwargs=dict(a="p", b=[1, 2]),),
+            ),
+
     def test_default(self):
         @dataclasses.dataclass
         class c:
@@ -15,16 +54,18 @@ class Tester(unittest.TestCase):
             y: float = 1
             z: str = dataclasses.field(default_factory=lambda: "ok")
 
-        self.assertEqual(c(x=0, y=2, z="a"), cast(c, dict(x=0, y=2, z="a")))
-        self.assertEqual(c(x=0, y=2), cast(c, dict(x=0, y=2, z="ok")))
-        self.assertEqual(c(x=0, z="a"), cast(c, dict(x=0, y=1, z="a")))
-        self.assertEqual(c(x=0), cast(c, dict(x=0, y=1, z="ok")))
+        self.assertEqual(
+            c(x=0, y=2, z="a"), type_casting.cast(c, dict(x=0, y=2, z="a"))
+        )
+        self.assertEqual(c(x=0, y=2), type_casting.cast(c, dict(x=0, y=2, z="ok")))
+        self.assertEqual(c(x=0, z="a"), type_casting.cast(c, dict(x=0, y=1, z="a")))
+        self.assertEqual(c(x=0), type_casting.cast(c, dict(x=0, y=1, z="ok")))
         with self.assertRaises(TypeError):
-            cast(c, dict(y=2, z="a"))
+            type_casting.cast(c, dict(y=2, z="a"))
         with self.assertRaises(TypeError):
-            cast(c, dict(x=0, y=2, z="a", w=99))
+            type_casting.cast(c, dict(x=0, y=2, z="a", w=99))
         with self.assertRaises(TypeError):
-            cast(c, dict(x=0, w=99))
+            type_casting.cast(c, dict(x=0, w=99))
 
     def test_cast(self):
         @dataclasses.dataclass
@@ -59,7 +100,7 @@ class Tester(unittest.TestCase):
             b=(1, "two", 3.4),
             c=collections.deque([1, 2, 3]),
         )
-        self.assertEqual(x, cast(c1, dataclasses.asdict(x)))
+        self.assertEqual(x, type_casting.cast(c1, dataclasses.asdict(x)))
 
     def test_cast_with_implicit_conversions(self):
         @dataclasses.dataclass
@@ -84,7 +125,7 @@ class Tester(unittest.TestCase):
                     My(9),
                 )
             ),
-            cast(
+            type_casting.cast(
                 c1,
                 dict(x=dict(x="3.2113", y=["1.992"], z=9)),
                 implicit_conversions={My: My},
@@ -104,13 +145,13 @@ class Tester(unittest.TestCase):
             ((1, 2.0, 3), (int, float, int)),
             ((1, 2.0, 3 + 4j), (int, float, complex)),
         ]:
-            c = cast(c1, dict(x=x, y=y, z=z))
+            c = type_casting.cast(c1, dict(x=x, y=y, z=z))
             self.assertEqual(type(c.x), tx)
             self.assertEqual(type(c.y), ty)
             self.assertEqual(type(c.z), tz)
         with self.assertRaises(TypeError):
-            cast(c1, dict(x=1, y=2j, z=3))
+            type_casting.cast(c1, dict(x=1, y=2j, z=3))
         with self.assertRaises(TypeError):
-            cast(c1, dict(x=1.0, y=2, z=3))
+            type_casting.cast(c1, dict(x=1.0, y=2, z=3))
         with self.assertRaises(TypeError):
-            cast(c1, dict(x=1j, y=2, z=3))
+            type_casting.cast(c1, dict(x=1j, y=2, z=3))
