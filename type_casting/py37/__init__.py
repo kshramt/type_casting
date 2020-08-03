@@ -6,7 +6,9 @@ from typing import Any, Union
 
 
 class GetAttr:
-    def __init__(self, args, kwargs):
+    def __init__(self, module, name, args, kwargs):
+        self.module = module
+        self.name = name
         self.args = args
         self.kwargs = kwargs
 
@@ -19,9 +21,9 @@ def cast(cls, x, implicit_conversions=None):
             raise TypeError(f'The "module" key not found in `x` for {cls}: {x}')
         if "name" not in x:
             raise TypeError(f'The "name" key not found in `x` for {cls}: {x}')
-        return getattr(sys.modules[x["module"]], x["name"])(
-            *cast(cls.args, x.get("args", [])), **cast(cls.kwargs, x.get("kwargs", {}))
-        )
+        return getattr(
+            sys.modules[cast(cls.module, x["module"])], cast(cls.name, x["name"])
+        )(*cast(cls.args, x.get("args", [])), **cast(cls.kwargs, x.get("kwargs", {})))
     elif dataclasses.is_dataclass(cls):
         if not isinstance(x, dict):
             raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")

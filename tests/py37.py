@@ -22,7 +22,27 @@ class Tester(unittest.TestCase):
             Recording("a", 1, a="p", b=[1, 2]),
             type_casting.cast(
                 type_casting.GetAttr(
-                    typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]
+                    str,
+                    str,
+                    typing.Sequence[typing.Any],
+                    typing.Mapping[str, typing.Any],
+                ),
+                dict(
+                    module=__name__,
+                    name="Recording",
+                    args=["a", 1],
+                    kwargs=dict(a="p", b=[1, 2]),
+                ),
+            ),
+        )
+        self.assertEqual(
+            Recording("a", 1, a="p", b=[1, 2]),
+            type_casting.cast(
+                type_casting.GetAttr(
+                    (__name__,),
+                    ("Recording",),
+                    typing.Sequence[typing.Any],
+                    typing.Mapping[str, typing.Any],
                 ),
                 dict(
                     module=__name__,
@@ -35,17 +55,53 @@ class Tester(unittest.TestCase):
         with self.assertRaises(TypeError):
             type_casting.cast(
                 type_casting.GetAttr(
-                    typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]
+                    str,
+                    str,
+                    typing.Sequence[typing.Any],
+                    typing.Mapping[str, typing.Any],
                 ),
                 dict(name="Recording", args=["a", 1], kwargs=dict(a="p", b=[1, 2]),),
             ),
         with self.assertRaises(TypeError):
             type_casting.cast(
                 type_casting.GetAttr(
-                    typing.Sequence[typing.Any], typing.Mapping[str, typing.Any]
+                    str,
+                    str,
+                    typing.Sequence[typing.Any],
+                    typing.Mapping[str, typing.Any],
                 ),
                 dict(module=__name__, args=["a", 1], kwargs=dict(a="p", b=[1, 2]),),
             ),
+        with self.assertRaises(TypeError):
+            type_casting.cast(
+                type_casting.GetAttr(
+                    (__name__,),
+                    ("not_Recording",),
+                    typing.Sequence[typing.Any],
+                    typing.Mapping[str, typing.Any],
+                ),
+                dict(
+                    module=__name__,
+                    name="Recording",
+                    args=["a", 1],
+                    kwargs=dict(a="p", b=[1, 2]),
+                ),
+            )
+        with self.assertRaises(TypeError):
+            type_casting.cast(
+                type_casting.GetAttr(
+                    ("not_" + __name__,),
+                    ("Recording",),
+                    typing.Sequence[typing.Any],
+                    typing.Mapping[str, typing.Any],
+                ),
+                dict(
+                    module=__name__,
+                    name="Recording",
+                    args=["a", 1],
+                    kwargs=dict(a="p", b=[1, 2]),
+                ),
+            )
 
     def test_default(self):
         @dataclasses.dataclass
