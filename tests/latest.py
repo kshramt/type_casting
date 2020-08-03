@@ -25,7 +25,7 @@ class Tester(unittest.TestCase):
         self.assertEqual(
             Recording("a", 1, a="p", b=(1, 2)),
             type_casting.cast(
-                type_casting.GetAttr(str, str, typing.Tuple[str, int], TD1),
+                type_casting.GetAttr[str, str, typing.Tuple[str, int], TD1],
                 dict(
                     module=__name__,
                     name="Recording",
@@ -37,12 +37,12 @@ class Tester(unittest.TestCase):
         self.assertEqual(
             Recording("a", 1, a="p", b=[1, 2]),
             type_casting.cast(
-                type_casting.GetAttr(
+                type_casting.GetAttr[
                     str,
                     str,
                     typing.Sequence[typing.Any],
                     typing.Mapping[str, typing.Any],
-                ),
+                ],
                 dict(
                     module=__name__,
                     name="Recording",
@@ -54,12 +54,12 @@ class Tester(unittest.TestCase):
         self.assertEqual(
             Recording("a", 1, a="p", b=[1, 2]),
             type_casting.cast(
-                type_casting.GetAttr(
+                type_casting.GetAttr[
                     typing.Literal[__name__],
                     typing.Literal["Recording"],
                     typing.Sequence[typing.Any],
                     typing.Mapping[str, typing.Any],
-                ),
+                ],
                 dict(
                     module=__name__,
                     name="Recording",
@@ -68,34 +68,55 @@ class Tester(unittest.TestCase):
                 ),
             ),
         )
+        self.assertEqual(
+            [Recording("a", 1, a="p", b=[1, 2])],
+            type_casting.cast(
+                typing.Sequence[
+                    type_casting.GetAttr[
+                        typing.Literal[__name__],
+                        typing.Literal["Recording"],
+                        typing.Sequence[typing.Any],
+                        typing.Mapping[str, typing.Any],
+                    ]
+                ],
+                [
+                    dict(
+                        module=__name__,
+                        name="Recording",
+                        args=["a", 1],
+                        kwargs=dict(a="p", b=[1, 2]),
+                    )
+                ],
+            ),
+        )
         with self.assertRaises(TypeError):
             type_casting.cast(
-                type_casting.GetAttr(
+                type_casting.GetAttr[
                     str,
                     str,
                     typing.Sequence[typing.Any],
                     typing.Mapping[str, typing.Any],
-                ),
+                ],
                 dict(name="Recording", args=["a", 1], kwargs=dict(a="p", b=[1, 2]),),
             )
         with self.assertRaises(TypeError):
             type_casting.cast(
-                type_casting.GetAttr(
+                type_casting.GetAttr[
                     str,
                     str,
                     typing.Sequence[typing.Any],
                     typing.Mapping[str, typing.Any],
-                ),
+                ],
                 dict(module=__name__, args=["a", 1], kwargs=dict(a="p", b=[1, 2]),),
             )
         with self.assertRaises(TypeError):
             type_casting.cast(
-                type_casting.GetAttr(
+                type_casting.GetAttr[
                     typing.Literal[__name__],
                     typing.Literal["not_Recording"],
                     typing.Sequence[typing.Any],
                     typing.Mapping[str, typing.Any],
-                ),
+                ],
                 dict(
                     module=__name__,
                     name="Recording",
@@ -105,12 +126,12 @@ class Tester(unittest.TestCase):
             )
         with self.assertRaises(TypeError):
             type_casting.cast(
-                type_casting.GetAttr(
+                type_casting.GetAttr[
                     typing.Literal["not_" + __name__],
                     typing.Literal["Recording"],
                     typing.Sequence[typing.Any],
                     typing.Mapping[str, typing.Any],
-                ),
+                ],
                 dict(
                     module=__name__,
                     name="Recording",

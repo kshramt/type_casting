@@ -2,28 +2,23 @@ import collections
 import dataclasses
 import decimal
 import sys
-from typing import Any, Union
+from typing import Any, Generic, TypeVar, Union
 
 
-class GetAttr:
-    def __init__(self, module, name, args, kwargs):
-        self.module = module
-        self.name = name
-        self.args = args
-        self.kwargs = kwargs
+_TModule = TypeVar("_TModule")
+_TName = TypeVar("_TName")
+_TArgs = TypeVar("_TArgs")
+_TKwargs = TypeVar("_TKwargs")
+_TLiteral = TypeVar("_TLiteral")
+
+
+class GetAttr(Generic[_TModule, _TName, _TArgs, _TKwargs]):
+    pass
 
 
 def cast(cls, x, implicit_conversions=None):
     if implicit_conversions and (cls in implicit_conversions):
         return implicit_conversions[cls](x)
-    elif isinstance(cls, GetAttr):
-        if "module" not in x:
-            raise TypeError(f'The "module" key not found in `x` for {cls}: {x}')
-        if "name" not in x:
-            raise TypeError(f'The "name" key not found in `x` for {cls}: {x}')
-        return getattr(
-            sys.modules[cast(cls.module, x["module"])], cast(cls.name, x["name"])
-        )(*cast(cls.args, x.get("args", [])), **cast(cls.kwargs, x.get("kwargs", {})))
     elif dataclasses.is_dataclass(cls):
         if not isinstance(x, dict):
             raise TypeError(f"{x}: {type(x)} is not compatible with {cls}")
@@ -67,6 +62,15 @@ def cast(cls, x, implicit_conversions=None):
         if x not in cls:
             raise TypeError(f"{x} is not compatible with {cls}")
         return x
+    elif cls.__origin__ == GetAttr:
+        if "module" not in x:
+            raise TypeError(f'The "module" key not found in `x` for {cls}: {x}')
+        if "name" not in x:
+            raise TypeError(f'The "name" key not found in `x` for {cls}: {x}')
+        module, name, args, kwargs = cls.__args__
+        return getattr(sys.modules[cast(module, x["module"])], cast(name, x["name"]))(
+            *cast(args, x.get("args", [])), **cast(kwargs, x.get("kwargs", {}))
+        )
     elif cls.__origin__ in (set, collections.abc.Set, collections.abc.MutableSet,):
         vcls = cls.__args__[0]
         return set(cast(vcls, v, implicit_conversions=implicit_conversions) for v in x)
