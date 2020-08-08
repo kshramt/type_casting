@@ -16,7 +16,61 @@ class Recording:
         return self.args == other.args and self.kwargs == other.kwargs
 
 
+class _TypedRecord:
+    def __init__(self, x: int, y: typing.Tuple[str], z: typing.Optional[int] = None):
+        self.kwargs = dict(x=x, y=y, z=z)
+
+    def __eq__(self, other):
+        return self.kwargs == other.kwargs
+
+
 class Tester(unittest.TestCase):
+    def test_getattr_with_inspect(self):
+        import re
+
+        self.assertEqual(
+            _TypedRecord(x=1, y=("2",), z=3),
+            type_casting.cast(
+                type_casting.GetAttr[str, str],
+                dict(
+                    module=__name__,
+                    name="_TypedRecord",
+                    kwargs=dict(x=1, y=["2"], z=3),
+                ),
+            ),
+        )
+        self.assertEqual(
+            _TypedRecord(x=1, y=("2",), z=None),
+            type_casting.cast(
+                type_casting.GetAttr[str, str],
+                dict(module=__name__, name="_TypedRecord", kwargs=dict(x=1, y=["2"])),
+            ),
+        )
+        with self.assertRaises(type_casting.CastingError):
+            type_casting.cast(
+                type_casting.GetAttr[str, str],
+                dict(name="_TypedRecord", kwargs=dict(x=1, y=["2"], z=3)),
+            )
+        with self.assertRaises(type_casting.CastingError):
+            type_casting.cast(
+                type_casting.GetAttr[str, str],
+                dict(module=__name__, kwargs=dict(x=1, y=["2"], z=3)),
+            )
+        with self.assertRaises(type_casting.CastingError):
+            type_casting.cast(
+                type_casting.GetAttr[str, str],
+                dict(module=__name__, name="_TypedRecord", kwargs=dict(x=1)),
+            )
+        with self.assertRaises(ValueError):
+            type_casting.cast(
+                type_casting.GetAttr[str, str],
+                dict(
+                    module="re",
+                    name="search",
+                    kwargs=dict(pattern="a", string="ab", flags=0),
+                ),
+            )
+
     def test_getattr(self):
         self.assertEqual(
             Recording("a", 1, a="p", b=[1, 2]),
@@ -35,7 +89,7 @@ class Tester(unittest.TestCase):
                 ),
             ),
         )
-        with self.assertRaises(TypeError):
+        with self.assertRaises(type_casting.CastingError):
             type_casting.cast(
                 type_casting.GetAttr[
                     str,
@@ -45,7 +99,7 @@ class Tester(unittest.TestCase):
                 ],
                 dict(name="Recording", args=["a", 1], kwargs=dict(a="p", b=[1, 2]),),
             ),
-        with self.assertRaises(TypeError):
+        with self.assertRaises(type_casting.CastingError):
             type_casting.cast(
                 type_casting.GetAttr[
                     str,
@@ -69,11 +123,11 @@ class Tester(unittest.TestCase):
         self.assertEqual(c(x=0, y=2), type_casting.cast(c, dict(x=0, y=2, z="ok")))
         self.assertEqual(c(x=0, z="a"), type_casting.cast(c, dict(x=0, y=1, z="a")))
         self.assertEqual(c(x=0), type_casting.cast(c, dict(x=0, y=1, z="ok")))
-        with self.assertRaises(TypeError):
+        with self.assertRaises(type_casting.CastingError):
             type_casting.cast(c, dict(y=2, z="a"))
-        with self.assertRaises(TypeError):
+        with self.assertRaises(type_casting.CastingError):
             type_casting.cast(c, dict(x=0, y=2, z="a", w=99))
-        with self.assertRaises(TypeError):
+        with self.assertRaises(type_casting.CastingError):
             type_casting.cast(c, dict(x=0, w=99))
 
     def test_cast(self):
@@ -158,9 +212,9 @@ class Tester(unittest.TestCase):
             self.assertEqual(type(c.x), tx)
             self.assertEqual(type(c.y), ty)
             self.assertEqual(type(c.z), tz)
-        with self.assertRaises(TypeError):
+        with self.assertRaises(type_casting.CastingError):
             type_casting.cast(c1, dict(x=1, y=2j, z=3))
-        with self.assertRaises(TypeError):
+        with self.assertRaises(type_casting.CastingError):
             type_casting.cast(c1, dict(x=1.0, y=2, z=3))
-        with self.assertRaises(TypeError):
+        with self.assertRaises(type_casting.CastingError):
             type_casting.cast(c1, dict(x=1j, y=2, z=3))
