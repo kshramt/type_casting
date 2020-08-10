@@ -1,11 +1,10 @@
-from typing import Any, Dict, Set
+from typing import Any, Dict, Generic, Set, TypeVar, Union
 import collections
 import dataclasses
 import decimal
 import functools
 import inspect
 import sys
-from typing import Any, Generic, TypeVar, Union
 
 
 _TModule = TypeVar("_TModule")
@@ -53,14 +52,13 @@ def cast(cls, x, implicit_conversions=None):
 
 
 def _analyze(cls, implicit_conversions):
-    if implicit_conversions and (cls in implicit_conversions):
+    if cls in implicit_conversions:
         return implicit_conversions[cls]
     elif dataclasses.is_dataclass(cls):
         fields = dataclasses.fields(cls)
         return functools.partial(
             _cast_kwargs,
             cls,
-            implicit_conversions,
             {f.name: _analyze(f.type, implicit_conversions) for f in fields},
             set(
                 f.name
@@ -200,9 +198,7 @@ def _analyze__GetAttrWithInspect(cls, implicit_conversions, module, name, x):
         fields[p.name] = _analyze(p.annotation, implicit_conversions)
         if p.default == inspect.Signature.empty:
             required_key_set.add(p.name)
-    return _cast_kwargs(
-        fn, implicit_conversions, fields, required_key_set, x.get("kwargs", {})
-    )
+    return _cast_kwargs(fn, fields, required_key_set, x.get("kwargs", {}))
 
 
 def _analyze_Literal(cls, x):
@@ -246,9 +242,7 @@ def _identity1(x):
     return x
 
 
-def _cast_kwargs(
-    cls, implicit_conversions, fields: Dict[str, Any], required_key_set: Set[str], x
-):
+def _cast_kwargs(cls, fields: Dict[str, Any], required_key_set: Set[str], x):
     if not isinstance(x, dict):
         raise CastingError(f"{x}: {type(x)} is not compatible with {cls}")
     x_key_set = set(x)

@@ -59,7 +59,6 @@ def _analyze(cls, implicit_conversions):
         return functools.partial(
             _cast_kwargs,
             cls,
-            implicit_conversions,
             {f.name: _analyze(f.type, implicit_conversions) for f in fields},
             set(
                 f.name
@@ -77,7 +76,6 @@ def _analyze(cls, implicit_conversions):
         return functools.partial(
             _cast_kwargs,
             cls,
-            implicit_conversions,
             {
                 k: _analyze(v, implicit_conversions)
                 for k, v in cls.__annotations__.items()
@@ -215,9 +213,7 @@ def _analyze__GetAttrWithInspect(cls, implicit_conversions, module, name, x):
         fields[p.name] = _analyze(p.annotation, implicit_conversions)
         if p.default == inspect.Signature.empty:
             required_key_set.add(p.name)
-    return _cast_kwargs(
-        fn, implicit_conversions, fields, required_key_set, x.get("kwargs", {})
-    )
+    return _cast_kwargs(fn, fields, required_key_set, x.get("kwargs", {}))
 
 
 def _analyze_Literal(cls, candidates, x):
@@ -261,9 +257,7 @@ def _identity1(x):
     return x
 
 
-def _cast_kwargs(
-    cls, implicit_conversions, fields: Dict[str, Any], required_key_set: Set[str], x
-):
+def _cast_kwargs(cls, fields: Dict[str, Any], required_key_set: Set[str], x):
     if not isinstance(x, dict):
         raise CastingError(f"{x}: {type(x)} is not compatible with {cls}")
     x_key_set = set(x)
