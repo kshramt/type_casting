@@ -1,11 +1,10 @@
-from typing import Any, Dict, Set
+from typing import Any, Dict, Generic, Literal, Set, TypeVar, Union
 import collections
 import dataclasses
 import decimal
 import functools
 import inspect
 import sys
-from typing import Any, Generic, Literal, TypeVar, Union
 
 
 _TModule = TypeVar("_TModule")
