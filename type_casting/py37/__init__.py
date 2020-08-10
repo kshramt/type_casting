@@ -47,7 +47,9 @@ GetAttr = _GetAttrOf()
 
 
 def cast(cls, x, implicit_conversions=None):
-    return _analyze(cls, implicit_conversions)(x)
+    return _analyze(cls, {} if implicit_conversions is None else implicit_conversions)(
+        x
+    )
 
 
 def _analyze(cls, implicit_conversions):

@@ -46,11 +46,13 @@ GetAttr = _GetAttrOf()
 
 
 def cast(cls, x, implicit_conversions=None):
-    return _analyze(cls, implicit_conversions)(x)
+    return _analyze(cls, {} if implicit_conversions is None else implicit_conversions)(
+        x
+    )
 
 
 def _analyze(cls, implicit_conversions):
-    if implicit_conversions and (cls in implicit_conversions):
+    if cls in implicit_conversions:
         return implicit_conversions[cls]
     elif dataclasses.is_dataclass(cls):
         fields = dataclasses.fields(cls)
