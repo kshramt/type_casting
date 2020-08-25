@@ -29,6 +29,15 @@ def positional_only(x: int, /):
 
 
 class Tester(unittest.TestCase):
+    def test_nested(self):
+        @dataclasses.dataclass
+        class c:
+            @dataclasses.dataclass
+            class d:
+                x: int
+            x: d
+        self.assertEqual(c(c.d(8)), type_casting.cast(c, dict(x=dict(x=8))))
+
     def test_getattr_with_inspect(self):
         import re
 
