@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generic, Literal, Set, TypeVar, Union
+from typing import Any, Dict, Generic, Literal, Set, Tuple, TypedDict, TypeVar, Union
 import collections
 import dataclasses
 import decimal
@@ -7,8 +7,7 @@ import inspect
 import sys
 
 
-_TModule = TypeVar("_TModule")
-_TName = TypeVar("_TName")
+_TPath = TypeVar("_TPath", bound=str)
 _TArgs = TypeVar("_TArgs")
 _TKwargs = TypeVar("_TKwargs")
 
@@ -21,28 +20,39 @@ class CastingError(Error):
     pass
 
 
-class _GetAttrOf:
+class EmptyDict(TypedDict):
+    pass
+
+
+EmptyTuple = Tuple[()]
+
+
+class GetAttr(Generic[_TPath]):
+    pass
+
+
+class _CallOf:
     @staticmethod
     def __getitem__(types):
-        if len(types) == 2:
-            return _GetAttrWithInspect[types]
-        elif len(types) == 4:
-            return _GetAttrWithArgsAndKwargs[types]
+        if not isinstance(types, tuple):
+            return _CallWithInspect[types]
+        elif len(types) == 3:
+            return _CallWithArgsAndKwargs[types]
         else:
             raise CastingError(
-                f"Only GetAttr[TModule, TName] or GetAttr[TModule, TName, TArgs, TKwargs] is supported: {types}"
+                f"Only Call[TPath] or GetAttr[TPath, TArgs, TKwargs] is supported: {types}"
             )
 
 
-class _GetAttrWithInspect(Generic[_TModule, _TName]):
+class _CallWithInspect(Generic[_TPath]):
     pass
 
 
-class _GetAttrWithArgsAndKwargs(Generic[_TModule, _TName, _TArgs, _TKwargs]):
+class _CallWithArgsAndKwargs(Generic[_TPath, _TArgs, _TKwargs]):
     pass
 
 
-GetAttr = _GetAttrOf()
+Call = _CallOf()
 
 
 def cast(cls, x, implicit_conversions=None):
@@ -92,24 +102,26 @@ def _analyze(cls, implicit_conversions):
         return _analyze_float
     elif isinstance(cls, type):
         return functools.partial(_analyze_type, cls)
-    elif cls.__origin__ == _GetAttrWithArgsAndKwargs:
-        module, name, args, kwargs = cls.__args__
+    elif cls.__origin__ == GetAttr:
         return functools.partial(
-            _analyze__GetAttrWithArgsAndKwargs,
+            _analyze_GetAttr, _analyze(cls.__args__[0], implicit_conversions)
+        )
+    elif cls.__origin__ == _CallWithArgsAndKwargs:
+        path, args, kwargs = cls.__args__
+        return functools.partial(
+            _analyze__CallWithArgsAndKwargs,
             str(cls),
-            _analyze(module, implicit_conversions),
-            _analyze(name, implicit_conversions),
+            _analyze(GetAttr[path], implicit_conversions),
             _analyze(args, implicit_conversions),
             _analyze(kwargs, implicit_conversions),
         )
-    elif cls.__origin__ == _GetAttrWithInspect:
-        module, name = cls.__args__
+    elif cls.__origin__ == _CallWithInspect:
+        path = cls.__args__[0]
         return functools.partial(
-            _analyze__GetAttrWithInspect,
-            cls,
+            _analyze__CallWithInspect,
+            str(cls),
             implicit_conversions,
-            _analyze(module, implicit_conversions),
-            _analyze(name, implicit_conversions),
+            _analyze(GetAttr[path], implicit_conversions),
         )
     elif cls.__origin__ == Literal:
         return functools.partial(_analyze_Literal, str(cls), cls.__args__)
@@ -183,22 +195,28 @@ def _analyze_type(cls, x):
     return x
 
 
-def _analyze__GetAttrWithArgsAndKwargs(cls, module, name, args, kwargs, x):
-    if "module" not in x:
-        raise CastingError(f'The "module" key not found in `x` for {cls}: {x}')
-    if "name" not in x:
-        raise CastingError(f'The "name" key not found in `x` for {cls}: {x}')
-    return getattr(sys.modules[module(x["module"])], name(x["name"]))(
-        *args(x.get("args", [])), **kwargs(x.get("kwargs", {}))
-    )
+def _analyze_GetAttr(path, x):
+    module_and_names = path(x).split(".")
+    return _deep_getattr(sys.modules[module_and_names[0]], module_and_names[1:])
 
 
-def _analyze__GetAttrWithInspect(cls, implicit_conversions, module, name, x):
-    if "module" not in x:
-        raise CastingError(f'The "module" key not found in `x` for {cls}: {x}')
-    if "name" not in x:
-        raise CastingError(f'The "name" key not found in `x` for {cls}: {x}')
-    fn = getattr(sys.modules[module(x["module"])], name(x["name"]))
+def _deep_getattr(x, names):
+    if names:
+        return _deep_getattr(getattr(x, names[0]), names[1:])
+    else:
+        return x
+
+
+def _analyze__CallWithArgsAndKwargs(cls, fn, args, kwargs, x):
+    if "fn" not in x:
+        raise CastingError(f'The "fn" key not found in `x` for {cls}: {x}')
+    return fn(x["fn"])(*args(x.get("args", [])), **kwargs(x.get("kwargs", {})))
+
+
+def _analyze__CallWithInspect(cls, implicit_conversions, path, x):
+    if "fn" not in x:
+        raise CastingError(f'The "fn" key not found in `x` for {cls}: {x}')
+    fn = path(x["fn"])
     fields = {}
     required_key_set = set()
     for p in inspect.signature(fn).parameters.values():

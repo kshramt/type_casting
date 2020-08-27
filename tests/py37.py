@@ -25,74 +25,80 @@ class _TypedRecord:
 
 
 class Tester(unittest.TestCase):
+    def test_getattr(self):
+        self.assertEqual(
+            type_casting.cast(type_casting.GetAttr[str], "type_casting.Call"),
+            type_casting.Call,
+        )
+        with self.assertRaises(KeyError):
+            type_casting.cast(type_casting.GetAttr[str], "")
+        with self.assertRaises(KeyError):
+            type_casting.cast(type_casting.GetAttr[str], "no_such_module")
+        with self.assertRaises(AttributeError):
+            type_casting.cast(type_casting.GetAttr[str], "type_casting.no_such_attr")
+
     def test_nested(self):
         @dataclasses.dataclass
         class c:
             @dataclasses.dataclass
             class d:
                 x: int
+
             x: d
+
         self.assertEqual(c(c.d(8)), type_casting.cast(c, dict(x=dict(x=8))))
 
-    def test_getattr_with_inspect(self):
+    def test_call_with_inspect(self):
         import re
 
         self.assertEqual(
             _TypedRecord(x=1, y=("2",), z=3),
             type_casting.cast(
-                type_casting.GetAttr[str, str],
-                dict(
-                    module=__name__,
-                    name="_TypedRecord",
-                    kwargs=dict(x=1, y=["2"], z=3),
-                ),
+                type_casting.Call[str],
+                dict(fn=(f"{__name__}._TypedRecord"), kwargs=dict(x=1, y=["2"], z=3),),
             ),
         )
         self.assertEqual(
             _TypedRecord(x=1, y=("2",), z=None),
             type_casting.cast(
-                type_casting.GetAttr[str, str],
-                dict(module=__name__, name="_TypedRecord", kwargs=dict(x=1, y=["2"])),
+                type_casting.Call[str],
+                dict(fn=f"{__name__}._TypedRecord", kwargs=dict(x=1, y=["2"])),
             ),
         )
         with self.assertRaises(type_casting.CastingError):
             type_casting.cast(
-                type_casting.GetAttr[str, str],
-                dict(name="_TypedRecord", kwargs=dict(x=1, y=["2"], z=3)),
+                type_casting.Call[str], dict(kwargs=dict(x=1, y=["2"], z=3)),
             )
         with self.assertRaises(type_casting.CastingError):
             type_casting.cast(
-                type_casting.GetAttr[str, str],
-                dict(module=__name__, kwargs=dict(x=1, y=["2"], z=3)),
+                type_casting.Call[str, str],
+                dict(fn=f"{__name__}._TypedRecord", kwargs=dict(x=1)),
             )
         with self.assertRaises(type_casting.CastingError):
             type_casting.cast(
-                type_casting.GetAttr[str, str],
-                dict(module=__name__, name="_TypedRecord", kwargs=dict(x=1)),
+                type_casting.Call[str],
+                dict(notfn=f"{__name__}._TypedRecord", kwargs=dict(x=1, y=["2"], z=3)),
+            )
+        with self.assertRaises(type_casting.CastingError):
+            type_casting.cast(
+                type_casting.Call[(f"{__name__}._TypedRecord",)],
+                dict(fn=f"{__name__}.not_TypedRecord", kwargs=dict(x=1, y=["2"], z=3),),
             )
         with self.assertRaises(ValueError):
             type_casting.cast(
-                type_casting.GetAttr[str, str],
-                dict(
-                    module="re",
-                    name="search",
-                    kwargs=dict(pattern="a", string="ab", flags=0),
-                ),
+                type_casting.Call[str],
+                dict(fn="re.search", kwargs=dict(pattern="a", string="ab", flags=0),),
             )
 
-    def test_getattr(self):
+    def test_call(self):
         self.assertEqual(
             Recording("a", 1, a="p", b=[1, 2]),
             type_casting.cast(
-                type_casting.GetAttr[
-                    str,
-                    str,
-                    typing.Sequence[typing.Any],
-                    typing.Mapping[str, typing.Any],
+                type_casting.Call[
+                    str, typing.Sequence[typing.Any], typing.Mapping[str, typing.Any],
                 ],
                 dict(
-                    module=__name__,
-                    name="Recording",
+                    fn=f"{__name__}.Recording",
                     args=["a", 1],
                     kwargs=dict(a="p", b=[1, 2]),
                 ),
@@ -100,24 +106,24 @@ class Tester(unittest.TestCase):
         )
         with self.assertRaises(type_casting.CastingError):
             type_casting.cast(
-                type_casting.GetAttr[
+                type_casting.Call[
                     str,
                     str,
                     typing.Sequence[typing.Any],
                     typing.Mapping[str, typing.Any],
                 ],
-                dict(name="Recording", args=["a", 1], kwargs=dict(a="p", b=[1, 2]),),
-            ),
+                dict(name="Recording", args=["a", 1], kwargs=dict(a="p", b=[1, 2])),
+            )
         with self.assertRaises(type_casting.CastingError):
             type_casting.cast(
-                type_casting.GetAttr[
+                type_casting.Call[
                     str,
                     str,
                     typing.Sequence[typing.Any],
                     typing.Mapping[str, typing.Any],
                 ],
-                dict(module=__name__, args=["a", 1], kwargs=dict(a="p", b=[1, 2]),),
-            ),
+                dict(module=__name__, args=["a", 1], kwargs=dict(a="p", b=[1, 2])),
+            )
 
     def test_default(self):
         @dataclasses.dataclass
