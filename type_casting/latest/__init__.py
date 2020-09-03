@@ -201,10 +201,9 @@ def _analyze_GetAttr(path, x):
 
 
 def _deep_getattr(x, names):
-    if names:
-        return _deep_getattr(getattr(x, names[0]), names[1:])
-    else:
-        return x
+    for name in names:
+        x = getattr(x, name)
+    return x
 
 
 def _analyze__CallWithArgsAndKwargs(cls, fn, args, kwargs, x):
