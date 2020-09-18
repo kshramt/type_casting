@@ -36,6 +36,19 @@ conf = type_casting.cast(
 assert conf == Conf(
     n_units=100, optimizer=SGDConf(name="SGD", learning_rate=1e-2)
 )
+
+assert type_casting.cast(
+    type_casting.Call[str],
+    dict(
+        fn="__main__.Conf",
+        kwargs=dict(
+            n_units=100,
+            optimizer=dict(name="SGD", learning_rate=1e-2),
+        )
+    ),
+) == Conf(
+    n_units=100, optimizer=SGDConf(name="SGD", learning_rate=1e-2)
+)
 ----
 
 == Release
