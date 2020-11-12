@@ -19,9 +19,16 @@ setup(
     description="Type Casting",
     url="https://github.com/kshramt/type_casting",
     author="kshramt",
-    packages=["type_casting", "type_casting.py37", "type_casting.latest"],
+    packages=[
+        "type_casting",
+        "type_casting.py37",
+        "type_casting.py38",
+        "type_casting.latest",
+    ],
     install_requires=[],
-    extras_require=dict(dev=["pylint", "twine", "black", "mypy", "pytype", "pyflakes", "coverage"]),
+    extras_require=dict(
+        dev=["pylint", "twine", "black", "mypy", "pytype", "pyflakes", "coverage"]
+    ),
     classifiers=["License :: OSI Approved :: GNU General Public License v3 (GPLv3)"],
     data_files=[(".", ["LICENSE.txt"])],
     zip_safe=True,

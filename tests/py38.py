@@ -17,7 +17,7 @@ class Recording:
 
 
 class _TypedRecord:
-    def __init__(self, x: int, y: tuple[str], z: typing.Optional[int] = None):
+    def __init__(self, x: int, y: typing.Tuple[str], z: typing.Optional[int] = None):
         self.kwargs = dict(x=x, y=y, z=z)
 
     def __eq__(self, other):
@@ -79,7 +79,7 @@ class Tester(unittest.TestCase):
         self.assertEqual(
             [_TypedRecord(x=1, y=("2",), z=3)],
             type_casting.cast(
-                collections.abc.Sequence[
+                typing.Sequence[
                     type_casting.Call[typing.Literal[f"{__name__}._TypedRecord"]],
                 ],
                 [dict(fn=f"{__name__}._TypedRecord", kwargs=dict(x=1, y=["2"], z=3),)],
@@ -118,12 +118,12 @@ class Tester(unittest.TestCase):
     def test_call(self):
         class TD1(typing.TypedDict):
             a: str
-            b: tuple[int, int]
+            b: typing.Tuple[int, int]
 
         self.assertEqual(
             Recording("a", 1, a="p", b=(1, 2)),
             type_casting.cast(
-                type_casting.Call[str, tuple[str, int], TD1],
+                type_casting.Call[str, typing.Tuple[str, int], TD1],
                 dict(
                     fn=f"{__name__}.Recording",
                     args=["a", 1],
@@ -135,7 +135,7 @@ class Tester(unittest.TestCase):
             Recording("a", 1, a="p", b=[1, 2]),
             type_casting.cast(
                 type_casting.Call[
-                    str, collections.abc.Sequence[typing.Any], collections.abc.Mapping[str, typing.Any],
+                    str, typing.Sequence[typing.Any], typing.Mapping[str, typing.Any],
                 ],
                 dict(
                     fn=f"{__name__}.Recording",
@@ -149,8 +149,8 @@ class Tester(unittest.TestCase):
             type_casting.cast(
                 type_casting.Call[
                     typing.Literal[f"{__name__}.Recording"],
-                    collections.abc.Sequence[typing.Any],
-                    collections.abc.Mapping[str, typing.Any],
+                    typing.Sequence[typing.Any],
+                    typing.Mapping[str, typing.Any],
                 ],
                 dict(
                     fn=f"{__name__}.Recording",
@@ -162,11 +162,11 @@ class Tester(unittest.TestCase):
         self.assertEqual(
             [Recording("a", 1, a="p", b=[1, 2])],
             type_casting.cast(
-                collections.abc.Sequence[
+                typing.Sequence[
                     type_casting.Call[
                         typing.Literal[f"{__name__}.Recording"],
-                        collections.abc.Sequence[typing.Any],
-                        collections.abc.Mapping[str, typing.Any],
+                        typing.Sequence[typing.Any],
+                        typing.Mapping[str, typing.Any],
                     ]
                 ],
                 [
@@ -183,8 +183,8 @@ class Tester(unittest.TestCase):
                 type_casting.Call[
                     str,
                     str,
-                    collections.abc.Sequence[typing.Any],
-                    collections.abc.Mapping[str, typing.Any],
+                    typing.Sequence[typing.Any],
+                    typing.Mapping[str, typing.Any],
                 ],
                 dict(name="Recording", args=["a", 1], kwargs=dict(a="p", b=[1, 2])),
             )
@@ -193,8 +193,8 @@ class Tester(unittest.TestCase):
                 type_casting.Call[
                     str,
                     str,
-                    collections.abc.Sequence[typing.Any],
-                    collections.abc.Mapping[str, typing.Any],
+                    typing.Sequence[typing.Any],
+                    typing.Mapping[str, typing.Any],
                 ],
                 dict(module=__name__, args=["a", 1], kwargs=dict(a="p", b=[1, 2])),
             )
@@ -202,8 +202,8 @@ class Tester(unittest.TestCase):
             type_casting.cast(
                 type_casting.Call[
                     typing.Literal[f"{__name__}.not_Recording"],
-                    collections.abc.Sequence[typing.Any],
-                    collections.abc.Mapping[str, typing.Any],
+                    typing.Sequence[typing.Any],
+                    typing.Mapping[str, typing.Any],
                 ],
                 dict(
                     fn=f"{__name__}.Recording",
@@ -239,21 +239,21 @@ class Tester(unittest.TestCase):
         @dataclasses.dataclass
         class c3:
             x: typing.Literal["yy"]
-            y: collections.abc.Mapping[str, typing.Optional[c4]]
+            y: typing.Mapping[str, typing.Optional[c4]]
 
         @dataclasses.dataclass
         class c2:
             x: typing.Literal["xx", "zz"]
-            y: dict[str, typing.Optional[c4]]
+            y: typing.Dict[str, typing.Optional[c4]]
 
         @dataclasses.dataclass
         class c1:
-            x: list[typing.Union[c2, c3]]
+            x: typing.List[typing.Union[c2, c3]]
             y: c4
-            z: collections.abc.Sequence[int]
-            a: set[str]
-            b: tuple[int, str, float]
-            c: collections.deque[int]
+            z: typing.Sequence[int]
+            a: typing.Set[str]
+            b: typing.Tuple[int, str, float]
+            c: typing.Deque[int]
 
         x = c1(
             x=[c2(x="xx", y=dict(a=None, b=c4(x=2, y=1.0))), c3(x="yy", y=dict())],
@@ -273,7 +273,7 @@ class Tester(unittest.TestCase):
         @dataclasses.dataclass
         class c2:
             x: decimal.Decimal
-            y: collections.deque[decimal.Decimal]
+            y: typing.Deque[decimal.Decimal]
             z: My
 
         @dataclasses.dataclass

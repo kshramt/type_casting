@@ -1,4 +1,4 @@
-from typing import Any, Generic, Literal, TypedDict, TypeVar, Union
+from typing import Any, Dict, Generic, Literal, Set, Tuple, TypedDict, TypeVar, Union
 import collections
 import dataclasses
 import decimal
@@ -24,7 +24,7 @@ class EmptyDict(TypedDict):
     pass
 
 
-EmptyTuple = tuple[()]
+EmptyTuple = Tuple[()]
 
 
 class GetAttr(Generic[_TPath]):
@@ -100,74 +100,71 @@ def _analyze(cls, implicit_conversions):
         return _analyze_complex
     elif cls == float:
         return _analyze_float
-    elif hasattr(cls, "__origin__"):
-        if cls.__origin__ == GetAttr:
-            return functools.partial(
-                _analyze_GetAttr, _analyze(cls.__args__[0], implicit_conversions)
-            )
-        elif cls.__origin__ == _CallWithArgsAndKwargs:
-            path, args, kwargs = cls.__args__
-            return functools.partial(
-                _analyze__CallWithArgsAndKwargs,
-                str(cls),
-                _analyze(GetAttr[path], implicit_conversions),
-                _analyze(args, implicit_conversions),
-                _analyze(kwargs, implicit_conversions),
-            )
-        elif cls.__origin__ == _CallWithInspect:
-            path = cls.__args__[0]
-            return functools.partial(
-                _analyze__CallWithInspect,
-                str(cls),
-                implicit_conversions,
-                _analyze(GetAttr[path], implicit_conversions),
-            )
-        elif cls.__origin__ == Literal:
-            return functools.partial(_analyze_Literal, str(cls), cls.__args__)
-        elif cls.__origin__ in (set, collections.abc.Set, collections.abc.MutableSet,):
-            return functools.partial(
-                _analyze_set, _analyze(cls.__args__[0], implicit_conversions)
-            )
-        elif cls.__origin__ in (
-            list,
-            collections.abc.Sequence,
-            collections.abc.MutableSequence,
-            collections.abc.Iterable,
-            collections.abc.Iterator,
-        ):
-            return functools.partial(
-                _analyze_list, _analyze(cls.__args__[0], implicit_conversions)
-            )
-        elif cls.__origin__ in (
-            dict,
-            collections.abc.Mapping,
-            collections.abc.MutableMapping,
-        ):
-            return functools.partial(
-                _analyze_dict,
-                _analyze(cls.__args__[0], implicit_conversions),
-                _analyze(cls.__args__[1], implicit_conversions),
-            )
-        elif cls.__origin__ == collections.deque:
-            return functools.partial(
-                _analyze_deque, _analyze(cls.__args__[0], implicit_conversions)
-            )
-        elif cls.__origin__ == tuple:
-            return functools.partial(
-                _analyze_tuple,
-                str(cls),
-                tuple(_analyze(vcls, implicit_conversions) for vcls in cls.__args__),
-            )
-        elif cls.__origin__ == Union:
-            return functools.partial(
-                _analyze_Union,
-                str(cls),
-                list(_analyze(ucls, implicit_conversions) for ucls in cls.__args__),
-            )
-        else:
-            raise ValueError(f"Unsupported class {cls}: {type(cls)}")
     elif isinstance(cls, type):
         return functools.partial(_analyze_type, cls)
+    elif cls.__origin__ == GetAttr:
+        return functools.partial(
+            _analyze_GetAttr, _analyze(cls.__args__[0], implicit_conversions)
+        )
+    elif cls.__origin__ == _CallWithArgsAndKwargs:
+        path, args, kwargs = cls.__args__
+        return functools.partial(
+            _analyze__CallWithArgsAndKwargs,
+            str(cls),
+            _analyze(GetAttr[path], implicit_conversions),
+            _analyze(args, implicit_conversions),
+            _analyze(kwargs, implicit_conversions),
+        )
+    elif cls.__origin__ == _CallWithInspect:
+        path = cls.__args__[0]
+        return functools.partial(
+            _analyze__CallWithInspect,
+            str(cls),
+            implicit_conversions,
+            _analyze(GetAttr[path], implicit_conversions),
+        )
+    elif cls.__origin__ == Literal:
+        return functools.partial(_analyze_Literal, str(cls), cls.__args__)
+    elif cls.__origin__ in (set, collections.abc.Set, collections.abc.MutableSet,):
+        return functools.partial(
+            _analyze_set, _analyze(cls.__args__[0], implicit_conversions)
+        )
+    elif cls.__origin__ in (
+        list,
+        collections.abc.Sequence,
+        collections.abc.MutableSequence,
+        collections.abc.Iterable,
+        collections.abc.Iterator,
+    ):
+        return functools.partial(
+            _analyze_list, _analyze(cls.__args__[0], implicit_conversions)
+        )
+    elif cls.__origin__ in (
+        dict,
+        collections.abc.Mapping,
+        collections.abc.MutableMapping,
+    ):
+        return functools.partial(
+            _analyze_dict,
+            _analyze(cls.__args__[0], implicit_conversions),
+            _analyze(cls.__args__[1], implicit_conversions),
+        )
+    elif cls.__origin__ == collections.deque:
+        return functools.partial(
+            _analyze_deque, _analyze(cls.__args__[0], implicit_conversions)
+        )
+    elif cls.__origin__ == tuple:
+        return functools.partial(
+            _analyze_tuple,
+            str(cls),
+            tuple(_analyze(vcls, implicit_conversions) for vcls in cls.__args__),
+        )
+    elif cls.__origin__ == Union:
+        return functools.partial(
+            _analyze_Union,
+            str(cls),
+            list(_analyze(ucls, implicit_conversions) for ucls in cls.__args__),
+        )
     else:
         raise ValueError(f"Unsupported class {cls}: {type(cls)}")
 
@@ -277,7 +274,7 @@ def _identity1(x):
     return x
 
 
-def _cast_kwargs(cls, fields: dict[str, Any], required_key_set: set[str], x):
+def _cast_kwargs(cls, fields: Dict[str, Any], required_key_set: Set[str], x):
     if not isinstance(x, dict):
         raise CastingError(f"{x}: {type(x)} is not compatible with {cls}")
     x_key_set = set(x)
