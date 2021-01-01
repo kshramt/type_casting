@@ -3,6 +3,7 @@
 
 image:https://travis-ci.com/kshramt/type_casting.svg?branch=master["Build Status", link="https://travis-ci.com/kshramt/type_casting"]
 
+[source,python3]
 ----
 # Python 3.8
 import dataclasses
@@ -50,6 +51,10 @@ assert type_casting.cast(
     n_units=100, optimizer=SGDConf(name="SGD", learning_rate=1e-2)
 )
 ----
+
+== Similar Projects
+
+. https://github.com/konradhalas/dacite
 
 == Release
 
