@@ -5,6 +5,7 @@ import decimal
 import functools
 import inspect
 import sys
+import typing
 
 
 _TPath = TypeVar("_TPath", bound=str)
@@ -100,12 +101,12 @@ def _analyze(cls, implicit_conversions):
         return _analyze_complex
     elif cls == float:
         return _analyze_float
-    elif hasattr(cls, "__origin__"):
-        if cls.__origin__ == GetAttr:
+    elif (origin := typing.get_origin(cls)) :
+        if origin == GetAttr:
             return functools.partial(
                 _analyze_GetAttr, _analyze(cls.__args__[0], implicit_conversions)
             )
-        elif cls.__origin__ == _CallWithArgsAndKwargs:
+        elif origin == _CallWithArgsAndKwargs:
             path, args, kwargs = cls.__args__
             return functools.partial(
                 _analyze__CallWithArgsAndKwargs,
@@ -114,7 +115,7 @@ def _analyze(cls, implicit_conversions):
                 _analyze(args, implicit_conversions),
                 _analyze(kwargs, implicit_conversions),
             )
-        elif cls.__origin__ == _CallWithInspect:
+        elif origin == _CallWithInspect:
             path = cls.__args__[0]
             return functools.partial(
                 _analyze__CallWithInspect,
@@ -122,13 +123,17 @@ def _analyze(cls, implicit_conversions):
                 implicit_conversions,
                 _analyze(GetAttr[path], implicit_conversions),
             )
-        elif cls.__origin__ == Literal:
+        elif origin == Literal:
             return functools.partial(_analyze_Literal, str(cls), cls.__args__)
-        elif cls.__origin__ in (set, collections.abc.Set, collections.abc.MutableSet,):
+        elif origin in (
+            set,
+            collections.abc.Set,
+            collections.abc.MutableSet,
+        ):
             return functools.partial(
                 _analyze_set, _analyze(cls.__args__[0], implicit_conversions)
             )
-        elif cls.__origin__ in (
+        elif origin in (
             list,
             collections.abc.Sequence,
             collections.abc.MutableSequence,
@@ -138,7 +143,7 @@ def _analyze(cls, implicit_conversions):
             return functools.partial(
                 _analyze_list, _analyze(cls.__args__[0], implicit_conversions)
             )
-        elif cls.__origin__ in (
+        elif origin in (
             dict,
             collections.abc.Mapping,
             collections.abc.MutableMapping,
@@ -148,17 +153,17 @@ def _analyze(cls, implicit_conversions):
                 _analyze(cls.__args__[0], implicit_conversions),
                 _analyze(cls.__args__[1], implicit_conversions),
             )
-        elif cls.__origin__ == collections.deque:
+        elif origin == collections.deque:
             return functools.partial(
                 _analyze_deque, _analyze(cls.__args__[0], implicit_conversions)
             )
-        elif cls.__origin__ == tuple:
+        elif origin == tuple:
             return functools.partial(
                 _analyze_tuple,
                 str(cls),
                 tuple(_analyze(vcls, implicit_conversions) for vcls in cls.__args__),
             )
-        elif cls.__origin__ == Union:
+        elif origin == Union:
             return functools.partial(
                 _analyze_Union,
                 str(cls),
