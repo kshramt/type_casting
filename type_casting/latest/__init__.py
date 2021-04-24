@@ -89,9 +89,9 @@ def _analyze(cls, implicit_conversions):
             cls,
             {
                 k: _analyze(v, implicit_conversions)
-                for k, v in cls.__annotations__.items()
+                for k, v in typing.get_type_hints(cls).items()
             },
-            set(cls.__annotations__) if cls.__total__ else set(),
+            set(typing.get_type_hints(cls)) if cls.__total__ else set(),
         )
     elif cls == Any:
         return _identity1
