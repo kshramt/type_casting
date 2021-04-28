@@ -78,7 +78,12 @@ def _analyze(cls, implicit_conversions):
                 and (f.default_factory == dataclasses.MISSING)
             ),
         )
-    elif typing.is_typeddict(cls):
+    elif (
+        isinstance(cls, type)
+        and issubclass(cls, dict)
+        and hasattr(cls, "__annotations__")
+        and hasattr(cls, "__total__")
+    ):
         return functools.partial(
             _cast_kwargs,
             cls,
