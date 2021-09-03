@@ -59,7 +59,7 @@ assert type_casting.cast(
 == Release
 
 ----
-rm -fr type_casting.egg-info
-python3 setup.py sdist
-twine upload dist/type_casting-x.y.z.tar.gz
+rm -fr type_casting.egg-info/ build/ dist/
+python3 setup.py bdist_wheel
+twine upload dist/type_casting-xxx.whl
 ----

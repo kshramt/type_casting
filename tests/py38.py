@@ -29,6 +29,12 @@ def positional_only(x: int, /):
 
 
 class Tester(unittest.TestCase):
+    def test_override(self):
+        self.assertEqual(
+            type_casting.override(dict(), ["a.b=8", 'p.q="7"']),
+            dict(a=dict(b=8), p=dict(q="7")),
+        )
+
     def test_getattr(self):
         self.assertEqual(
             type_casting.cast(type_casting.GetAttr[str], "type_casting.Call"),

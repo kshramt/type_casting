@@ -29,6 +29,11 @@ def positional_only(x: int, /):
 
 
 class Tester(unittest.TestCase):
+    def test_override(self):
+        self.assertEqual(
+            type_casting.override(dict(x=[1, 2, 3]), ["a.b=8", 'p.q="7"', "x=[3.2]"]),
+            dict(a=dict(b=8), p=dict(q="7"), x=[3.2]),
+        )
     def test_getattr(self):
         self.assertEqual(
             type_casting.cast(type_casting.GetAttr[str], "type_casting.Call"),
@@ -59,7 +64,10 @@ class Tester(unittest.TestCase):
             _TypedRecord(x=1, y=("2",), z=3),
             type_casting.cast(
                 type_casting.Call[str],
-                dict(fn=(f"{__name__}._TypedRecord"), kwargs=dict(x=1, y=["2"], z=3),),
+                dict(
+                    fn=(f"{__name__}._TypedRecord"),
+                    kwargs=dict(x=1, y=["2"], z=3),
+                ),
             ),
         )
         self.assertEqual(
@@ -73,7 +81,10 @@ class Tester(unittest.TestCase):
             _TypedRecord(x=1, y=("2",), z=3),
             type_casting.cast(
                 type_casting.Call[typing.Literal[f"{__name__}._TypedRecord"]],
-                dict(fn=f"{__name__}._TypedRecord", kwargs=dict(x=1, y=["2"], z=3),),
+                dict(
+                    fn=f"{__name__}._TypedRecord",
+                    kwargs=dict(x=1, y=["2"], z=3),
+                ),
             ),
         )
         self.assertEqual(
@@ -82,12 +93,18 @@ class Tester(unittest.TestCase):
                 collections.abc.Sequence[
                     type_casting.Call[typing.Literal[f"{__name__}._TypedRecord"]],
                 ],
-                [dict(fn=f"{__name__}._TypedRecord", kwargs=dict(x=1, y=["2"], z=3),)],
+                [
+                    dict(
+                        fn=f"{__name__}._TypedRecord",
+                        kwargs=dict(x=1, y=["2"], z=3),
+                    )
+                ],
             ),
         )
         with self.assertRaises(type_casting.CastingError):
             type_casting.cast(
-                type_casting.Call[str], dict(kwargs=dict(x=1, y=["2"], z=3)),
+                type_casting.Call[str],
+                dict(kwargs=dict(x=1, y=["2"], z=3)),
             )
         with self.assertRaises(type_casting.CastingError):
             type_casting.cast(
@@ -102,17 +119,26 @@ class Tester(unittest.TestCase):
         with self.assertRaises(type_casting.CastingError):
             type_casting.cast(
                 type_casting.Call[typing.Literal[f"{__name__}._TypedRecord"]],
-                dict(fn=f"{__name__}.not_TypedRecord", kwargs=dict(x=1, y=["2"], z=3),),
+                dict(
+                    fn=f"{__name__}.not_TypedRecord",
+                    kwargs=dict(x=1, y=["2"], z=3),
+                ),
             )
         with self.assertRaises(TypeError):
             type_casting.cast(
                 type_casting.Call[str],
-                dict(fn=f"{__name__}.positional_only", kwargs=dict(x=1),),
+                dict(
+                    fn=f"{__name__}.positional_only",
+                    kwargs=dict(x=1),
+                ),
             )
         with self.assertRaises(ValueError):
             type_casting.cast(
                 type_casting.Call[str],
-                dict(fn="re.search", kwargs=dict(pattern="a", string="ab", flags=0),),
+                dict(
+                    fn="re.search",
+                    kwargs=dict(pattern="a", string="ab", flags=0),
+                ),
             )
 
     def test_call(self):
@@ -135,7 +161,9 @@ class Tester(unittest.TestCase):
             Recording("a", 1, a="p", b=[1, 2]),
             type_casting.cast(
                 type_casting.Call[
-                    str, collections.abc.Sequence[typing.Any], collections.abc.Mapping[str, typing.Any],
+                    str,
+                    collections.abc.Sequence[typing.Any],
+                    collections.abc.Mapping[str, typing.Any],
                 ],
                 dict(
                     fn=f"{__name__}.Recording",

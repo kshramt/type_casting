@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generic, Literal, Set, Tuple, TypedDict, TypeVar, Union
+import ast
 import collections
 import dataclasses
 import decimal
@@ -6,7 +6,8 @@ import functools
 import inspect
 import sys
 import typing
-
+from typing import (Any, Dict, Generic, List, Literal, Set, Tuple, TypedDict,
+                    TypeVar, Union)
 
 _TPath = TypeVar("_TPath", bound=str)
 _TArgs = TypeVar("_TArgs")
@@ -60,6 +61,35 @@ def cast(cls, x, implicit_conversions=None):
     return _analyze(cls, {} if implicit_conversions is None else implicit_conversions)(
         x
     )
+
+
+def override(x, overrides: List[str]):
+    for ks, v in map(_parse_override, overrides):
+        _insert(x, ks, v)
+    return x
+
+
+def _insert(x, ks: List[str], v):
+    n = len(ks)
+    if n < 1:
+        raise ValueError("len(ks) < 1")
+    y = x
+    for i in range(n - 1):
+        k = ks[i]
+        if k not in y:
+            y[k] = dict()
+        y = y[k]
+    y[ks[-1]] = v
+    return x
+
+
+def _parse_override(s: str):
+    lhs, rhs = s.split("=", 1)
+    keys = lhs.split(".")
+    if len(keys) < 1:
+        raise ValueError(f"keys < 1: {s}")
+    value = ast.literal_eval(rhs)
+    return keys, value
 
 
 def _analyze(cls, implicit_conversions):
@@ -126,7 +156,11 @@ def _analyze(cls, implicit_conversions):
         )
     elif cls.__origin__ == Literal:
         return functools.partial(_analyze_Literal, str(cls), cls.__args__)
-    elif cls.__origin__ in (set, collections.abc.Set, collections.abc.MutableSet,):
+    elif cls.__origin__ in (
+        set,
+        collections.abc.Set,
+        collections.abc.MutableSet,
+    ):
         return functools.partial(
             _analyze_set, _analyze(cls.__args__[0], implicit_conversions)
         )

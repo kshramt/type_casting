@@ -1,4 +1,3 @@
-from typing import Any, Generic, Literal, TypedDict, TypeVar, Union
 import collections
 import dataclasses
 import decimal
@@ -6,54 +5,15 @@ import functools
 import inspect
 import sys
 import typing
+from typing import Any, Generic, Literal, TypedDict, TypeVar, Union
 
-
-_TPath = TypeVar("_TPath", bound=str)
-_TArgs = TypeVar("_TArgs")
-_TKwargs = TypeVar("_TKwargs")
-
-
-class Error(Exception):
-    pass
-
-
-class CastingError(Error):
-    pass
-
-
-class EmptyDict(TypedDict):
-    pass
-
-
-EmptyTuple = tuple[()]
-
-
-class GetAttr(Generic[_TPath]):
-    pass
-
-
-class _CallOf:
-    @staticmethod
-    def __getitem__(types):
-        if not isinstance(types, tuple):
-            return _CallWithInspect[types]
-        elif len(types) == 3:
-            return _CallWithArgsAndKwargs[types]
-        else:
-            raise CastingError(
-                f"Only Call[TPath] or GetAttr[TPath, TArgs, TKwargs] is supported: {types}"
-            )
-
-
-class _CallWithInspect(Generic[_TPath]):
-    pass
-
-
-class _CallWithArgsAndKwargs(Generic[_TPath, _TArgs, _TKwargs]):
-    pass
-
-
-Call = _CallOf()
+from .._common import (Call, CastingError, EmptyDict, EmptyTuple, GetAttr, override,
+                      _analyze__CallWithArgsAndKwargs, _analyze_complex,
+                      _analyze_Decimal, _analyze_deque, _analyze_dict,
+                      _analyze_float, _analyze_GetAttr, _analyze_list,
+                      _analyze_Literal, _analyze_set, _analyze_tuple,
+                      _analyze_type, _analyze_Union, _CallWithArgsAndKwargs,
+                      _CallWithInspect, _cast_kwargs, _identity1)
 
 
 def cast(cls, x, implicit_conversions=None):
@@ -101,7 +61,7 @@ def _analyze(cls, implicit_conversions):
         return _analyze_complex
     elif cls == float:
         return _analyze_float
-    elif (origin := typing.get_origin(cls)) :
+    elif origin := typing.get_origin(cls):
         if origin == GetAttr:
             return functools.partial(
                 _analyze_GetAttr, _analyze(cls.__args__[0], implicit_conversions)
@@ -177,49 +137,6 @@ def _analyze(cls, implicit_conversions):
         raise ValueError(f"Unsupported class {cls}: {type(cls)}")
 
 
-def _analyze_Decimal(x):
-    if not isinstance(x, (str, int, float)):
-        raise CastingError(
-            f"{x}: {type(x)} is not compatible with <class 'decimal.Decimal'>"
-        )
-    return decimal.Decimal(x)
-
-
-def _analyze_complex(x):
-    if not isinstance(x, (int, float, complex)):
-        raise CastingError(f"{x}: {type(x)} is not compatible with <class 'complex'>")
-    return x
-
-
-def _analyze_float(x):
-    if not isinstance(x, (int, float)):
-        raise CastingError(f"{x}: {type(x)} is not compatible with <class 'float'>")
-    return x
-
-
-def _analyze_type(cls, x):
-    if not isinstance(x, cls):
-        raise CastingError(f"{x}: {type(x)} is not compatible with {cls}")
-    return x
-
-
-def _analyze_GetAttr(path, x):
-    module_and_names = path(x).split(".")
-    return _deep_getattr(sys.modules[module_and_names[0]], module_and_names[1:])
-
-
-def _deep_getattr(x, names):
-    for name in names:
-        x = getattr(x, name)
-    return x
-
-
-def _analyze__CallWithArgsAndKwargs(cls, fn, args, kwargs, x):
-    if "fn" not in x:
-        raise CastingError(f'The "fn" key not found in `x` for {cls}: {x}')
-    return fn(x["fn"])(*args(x.get("args", [])), **kwargs(x.get("kwargs", {})))
-
-
 def _analyze__CallWithInspect(cls, implicit_conversions, path, x):
     if "fn" not in x:
         raise CastingError(f'The "fn" key not found in `x` for {cls}: {x}')
@@ -239,56 +156,3 @@ def _analyze__CallWithInspect(cls, implicit_conversions, path, x):
         if p.default == inspect.Signature.empty:
             required_key_set.add(p.name)
     return _cast_kwargs(fn, fields, required_key_set, x.get("kwargs", {}))
-
-
-def _analyze_Literal(cls, candidates, x):
-    if x not in candidates:
-        raise CastingError(f"{x} is not compatible with {cls}")
-    return x
-
-
-def _analyze_set(vcls, x):
-    return set(vcls(v) for v in x)
-
-
-def _analyze_list(vcls, x):
-    return [vcls(v) for v in x]
-
-
-def _analyze_dict(kcls, vcls, x):
-    return {kcls(k): vcls(v) for k, v in x.items()}
-
-
-def _analyze_deque(vcls, x):
-    return collections.deque(vcls(v) for v in x)
-
-
-def _analyze_tuple(cls, vclss, x):
-    if len(vclss) != len(x):
-        raise CastingError(f"{x}: {type(x)} is not compatible with {cls}")
-    return tuple(vcls(v) for vcls, v in zip(vclss, x))
-
-
-def _analyze_Union(cls, uclss, x):
-    for ucls in uclss:
-        try:
-            return ucls(x)
-        except CastingError:
-            pass
-    raise CastingError(f"{x}: {type(x)} is not compatible with {cls}")
-
-
-def _identity1(x):
-    return x
-
-
-def _cast_kwargs(cls, fields: dict[str, Any], required_key_set: set[str], x):
-    if not isinstance(x, dict):
-        raise CastingError(f"{x}: {type(x)} is not compatible with {cls}")
-    x_key_set = set(x)
-    if not (required_key_set.issubset(x_key_set) and x_key_set.issubset(fields)):
-        raise CastingError(f"{x}: {type(x)} is not compatible with {cls}")
-    kwargs = {}
-    for k, v in x.items():
-        kwargs[k] = fields[k](v)
-    return cls(**kwargs)

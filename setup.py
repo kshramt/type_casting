@@ -21,13 +21,23 @@ setup(
     author="kshramt",
     packages=[
         "type_casting",
+        "type_casting._common",
         "type_casting.py37",
         "type_casting.py38",
         "type_casting.latest",
     ],
     install_requires=[],
     extras_require=dict(
-        dev=["pylint", "twine", "black", "mypy", "pytype", "pyflakes", "coverage"]
+        dev=[
+            "black",
+            "coverage",
+            "mypy",
+            "pyflakes",
+            "pylint",
+            "pytype",
+            "twine",
+            "wheel",
+        ]
     ),
     classifiers=["License :: OSI Approved :: GNU General Public License v3 (GPLv3)"],
     data_files=[(".", ["LICENSE.txt"])],
