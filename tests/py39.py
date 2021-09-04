@@ -34,6 +34,7 @@ class Tester(unittest.TestCase):
             type_casting.override(dict(x=[1, 2, 3]), ["a.b=8", 'p.q="7"', "x=[3.2]"]),
             dict(a=dict(b=8), p=dict(q="7"), x=[3.2]),
         )
+
     def test_getattr(self):
         self.assertEqual(
             type_casting.cast(type_casting.GetAttr[str], "type_casting.Call"),

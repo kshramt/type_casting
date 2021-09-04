@@ -6,8 +6,18 @@ import functools
 import inspect
 import sys
 import typing
-from typing import (Any, Dict, Generic, List, Literal, Set, Tuple, TypedDict,
-                    TypeVar, Union)
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    List,
+    Literal,
+    Set,
+    Tuple,
+    TypedDict,
+    TypeVar,
+    Union,
+)
 
 _TPath = TypeVar("_TPath", bound=str)
 _TArgs = TypeVar("_TArgs")

@@ -125,6 +125,27 @@ def _analyze__CallWithArgsAndKwargs(cls, fn, args, kwargs, x):
     return fn(x["fn"])(*args(x.get("args", [])), **kwargs(x.get("kwargs", {})))
 
 
+def _analyze__CallWithInspect(cls, analyze, implicit_conversions, path, x):
+    if "fn" not in x:
+        raise CastingError(f'The "fn" key not found in `x` for {cls}: {x}')
+    fn = path(x["fn"])
+    fields = {}
+    required_key_set = set()
+    for p in inspect.signature(fn).parameters.values():
+        if p.annotation == inspect.Signature.empty:
+            parameters = tuple(
+                dict(name=p.name, annotation=p.annotation, default=p.default)
+                for p in inspect.signature(fn).parameters.values()
+            )
+            raise ValueError(
+                f"Unable to get the type annotation of {p.name} for {fn}{parameters}. Please use `GetAttr[module, name, args_type, kwargs_type]` instead."
+            )
+        fields[p.name] = analyze(p.annotation, implicit_conversions)
+        if p.default == inspect.Signature.empty:
+            required_key_set.add(p.name)
+    return _cast_kwargs(fn, fields, required_key_set, x.get("kwargs", {}))
+
+
 def _analyze_Literal(cls, candidates, x):
     if x not in candidates:
         raise CastingError(f"{x} is not compatible with {cls}")

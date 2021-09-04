@@ -1,11 +1,10 @@
-from typing import Any, Dict, Generic, Set, Tuple, TypeVar, Union
 import collections
 import dataclasses
 import decimal
 import functools
 import inspect
 import sys
-
+from typing import Any, Dict, Generic, Set, Tuple, TypeVar, Union
 
 _TPath = TypeVar("_TPath", bound=str)
 _TArgs = TypeVar("_TArgs")
@@ -106,7 +105,11 @@ def _analyze(cls, implicit_conversions):
             implicit_conversions,
             _analyze(GetAttr[path], implicit_conversions),
         )
-    elif cls.__origin__ in (set, collections.abc.Set, collections.abc.MutableSet,):
+    elif cls.__origin__ in (
+        set,
+        collections.abc.Set,
+        collections.abc.MutableSet,
+    ):
         return functools.partial(
             _analyze_set, _analyze(cls.__args__[0], implicit_conversions)
         )
