@@ -24,6 +24,7 @@ setup(
         "type_casting._common",
         "type_casting.py37",
         "type_casting.py38",
+        "type_casting.py39",
         "type_casting.latest",
     ],
     install_requires=[],
