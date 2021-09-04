@@ -3,7 +3,6 @@
 
 [source,python3]
 ----
-# Python 3.8
 import dataclasses
 import typing
 
@@ -28,9 +27,12 @@ class Conf:
     optimizer: typing.Union[AdamConf, SGDConf]
 
 
+conf_dict = dict(n_units=100, optimizer=dict(name="Adam", learning_rate=1e-2))
+type_casting.override(conf_dict, ['optimizer.name="SGD"'])
+
 conf = type_casting.cast(
     Conf,
-    dict(n_units=100, optimizer=dict(name="SGD", learning_rate=1e-2)),
+    conf_dict,
 )
 assert conf == Conf(
     n_units=100, optimizer=SGDConf(name="SGD", learning_rate=1e-2)
