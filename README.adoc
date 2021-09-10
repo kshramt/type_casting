@@ -59,7 +59,8 @@ assert type_casting.cast(
 == Release
 
 ----
-rm -fr type_casting.egg-info/ build/ dist/
-python3 setup.py bdist_wheel
-twine upload dist/type_casting-xxx.whl
+python3 -m venv venv
+venv/bin/pip install -e .[dev]
+venv/bin/python3 -m build --wheel
+venv/bin/twine upload dist/type_casting-xxx.whl
 ----
