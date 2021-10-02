@@ -3,7 +3,7 @@ import collections
 import decimal
 import inspect
 import sys
-from typing import Any, Generic, Tuple, TypedDict, TypeVar
+from typing import Any, Generic, TypedDict, TypeVar
 
 _TPath = TypeVar("_TPath", bound=str)
 _TArgs = TypeVar("_TArgs")
@@ -22,7 +22,7 @@ class EmptyDict(TypedDict):
     pass
 
 
-EmptyTuple = Tuple[()]
+EmptyTuple = tuple[()]
 
 
 class GetAttr(Generic[_TPath]):
@@ -53,13 +53,13 @@ class _CallWithArgsAndKwargs(Generic[_TPath, _TArgs, _TKwargs]):
 Call = _CallOf()
 
 
-def override(x, overrides: list[str]):
+def override(x, overrides: collections.abc.Iterable[str]):
     for ks, v in map(_parse_override, overrides):
         _insert(x, ks, v)
     return x
 
 
-def _insert(x, ks: list[str], v):
+def _insert(x, ks: collections.abc.Iterable[str], v):
     n = len(ks)
     if n < 1:
         raise ValueError("len(ks) < 1")
