@@ -3,6 +3,7 @@ import dataclasses
 import decimal
 import functools
 import typing
+from types import UnionType
 from typing import Any, Literal, Union
 
 from .._common import (
@@ -136,7 +137,7 @@ def _analyze(cls, implicit_conversions):
                 str(cls),
                 tuple(_analyze(vcls, implicit_conversions) for vcls in cls.__args__),
             )
-        elif origin == Union:
+        elif origin in (Union, UnionType):
             return functools.partial(
                 _analyze_Union,
                 str(cls),

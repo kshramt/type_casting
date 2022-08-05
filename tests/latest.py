@@ -294,6 +294,41 @@ class Tester(unittest.TestCase):
         )
         self.assertEqual(x, type_casting.cast(c1, dataclasses.asdict(x)))
 
+    def test_cast_with_UnionType(self):
+        @dataclasses.dataclass
+        class c4:
+            x: int
+            y: float
+
+        @dataclasses.dataclass
+        class c3:
+            x: typing.Literal["yy"]
+            y: collections.abc.Mapping[str, typing.Optional[c4]]
+
+        @dataclasses.dataclass
+        class c2:
+            x: typing.Literal["xx", "zz"]
+            y: dict[str, typing.Optional[c4]]
+
+        @dataclasses.dataclass
+        class c1:
+            x: list[c2 | c3]
+            y: c4
+            z: collections.abc.Sequence[int]
+            a: set[str]
+            b: tuple[int, str, float]
+            c: collections.deque[int]
+
+        x = c1(
+            x=[c2(x="xx", y=dict(a=None, b=c4(x=2, y=1.0))), c3(x="yy", y=dict())],
+            y=c4(x=1, y=1.3),
+            z=[1],
+            a=set(["a"]),
+            b=(1, "two", 3.4),
+            c=collections.deque([1, 2, 3]),
+        )
+        self.assertEqual(x, type_casting.cast(c1, dataclasses.asdict(x)))
+
     def test_cast_with_implicit_conversions(self):
         @dataclasses.dataclass
         class My:
