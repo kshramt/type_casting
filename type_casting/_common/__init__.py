@@ -59,7 +59,7 @@ def override(x, overrides: collections.abc.Iterable[str]):
     return x
 
 
-def _insert(x, ks: collections.abc.Iterable[str], v):
+def _insert(x, ks: collections.abc.Sequence[str], v):
     n = len(ks)
     if n < 1:
         raise ValueError("len(ks) < 1")
